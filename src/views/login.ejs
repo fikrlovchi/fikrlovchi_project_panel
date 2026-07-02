@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <title>Kirish — Fikrlovchi Panel</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="login-page">
+  <form class="login-form" method="post" action="/login">
+    <h1>Fikrlovchi Panel</h1>
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+    <label>
+      Login
+      <input type="text" name="username" autocomplete="username" required autofocus />
+    </label>
+    <label>
+      Parol
+      <input type="password" name="password" autocomplete="current-password" required />
+    </label>
+    <button type="submit">Kirish</button>
+  </form>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <title><%= project.display_name %> — Fikrlovchi Panel</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <%- include('partials/topbar') %>
+  <main>
+    <p><a href="/">&larr; Loyihalar</a></p>
+    <h2><%= project.display_name %></h2>
+
+    <% if (actionMessage) { %><p style="color:var(--success);">Bajarildi: <%= actionMessage %></p><% } %>
+    <% if (errorMessage) { %><p class="error"><%= errorMessage %></p><% } %>
+
+    <% if (isManaged) { %>
+      <div class="card">
+        <strong>Boshqaruv</strong>
+        <div class="controls">
+          <form method="post" action="/projects/<%= project.slug %>/interval">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="number" name="minutes" min="1" max="1440" value="<%= intervalMinutes || '' %>" placeholder="daqiqa" required />
+            <button type="submit">Intervalni saqlash</button>
+          </form>
+          <form method="post" action="/projects/<%= project.slug %>/<%= project.is_paused ? 'resume' : 'pause' %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit"><%= project.is_paused ? 'Davom ettirish' : "To'xtatish" %></button>
+          </form>
+          <form method="post" action="/projects/<%= project.slug %>/run-now">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit">Hozir ishga tushirish</button>
+          </form>
+        </div>
+        <% if (liveStatus && !liveStatus.error) { %>
+          <div style="font-size:12px;color:var(--muted);">
+            Service: <%= liveStatus.service.ActiveState %>/<%= liveStatus.service.SubState %> ·
+            Timer: <%= liveStatus.timer.ActiveState %>/<%= liveStatus.timer.SubState %>
+          </div>
+        <% } else if (liveStatus && liveStatus.error) { %>
+          <div class="error-banner">Holatni olishda xato: <%= liveStatus.error %></div>
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <strong>Ishga tushishlar tarixi</strong>
+      <table>
+        <thead>
+          <tr><th>Boshlandi</th><th>Holat</th><th>Muvaffaqiyat</th><th>Xato</th><th>Xulosa</th></tr>
+        </thead>
+        <tbody>
+        <% runs.forEach(function (r) { %>
+          <tr>
+            <td><%= r.started_at %></td>
+            <td><span class="badge <%= r.status === 'success' ? 'ok' : 'error' %>"><%= r.status %></span></td>
+            <td><%= r.success_count %></td>
+            <td><%= r.error_count %></td>
+            <td><%= r.summary || '' %></td>
+          </tr>
+          <% (logsByRun[r.id] || []).forEach(function (log) { %>
+            <tr>
+              <td colspan="5" class="log-line <%= log.level %>"><%= log.logged_at %> [<%= log.level %>] <%= log.message %></td>
+            </tr>
+          <% }); %>
+        <% }); %>
+        <% if (runs.length === 0) { %>
+          <tr><td colspan="5">Hali hisobot kelmagan</td></tr>
+        <% } %>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <% if (page > 1) { %><a href="?page=<%= page - 1 %>">&larr; Oldingi</a><% } %>
+        <span>Sahifa <%= page %> / <%= Math.max(1, Math.ceil(totalRuns / pageSize)) %></span>
+        <% if (page * pageSize < totalRuns) { %><a href="?page=<%= page + 1 %>">Keyingi &rarr;</a><% } %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
