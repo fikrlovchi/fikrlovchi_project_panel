@@ -14,17 +14,18 @@ function redirectBack(res, ok, error) {
 }
 
 router.get("/variables", (req, res) => {
-  const telegramBots = telegramCatalog.listAllForCatalog().map((bot) => ({
+  const telegramBots = telegramCatalog.listBots().map((bot) => ({
     ...bot,
     botTokenMasked: envFileEditor.maskSecret(bot.bot_token),
     linkedProjects: variableLinks.getProjectsLinkedToBot(bot.id),
-    chats: bot.chats.map((chat) => ({
-      ...chat,
-      linkedProjects: variableLinks.getProjectsLinkedToChat(chat.id),
-      topics: chat.topics.map((topic) => ({
-        ...topic,
-        linkedProjects: variableLinks.getProjectsLinkedToTopic(topic.id),
-      })),
+  }));
+
+  const telegramChats = telegramCatalog.listChatsWithTopics().map((chat) => ({
+    ...chat,
+    linkedProjects: variableLinks.getProjectsLinkedToChat(chat.id),
+    topics: chat.topics.map((topic) => ({
+      ...topic,
+      linkedProjects: variableLinks.getProjectsLinkedToTopic(topic.id),
     })),
   }));
 
@@ -39,6 +40,7 @@ router.get("/variables", (req, res) => {
 
   res.render("variables", {
     telegramBots,
+    telegramChats,
     sheets,
     csrfToken: ensureCsrfToken(req),
     actionMessage: req.query.ok,
@@ -105,9 +107,9 @@ router.post("/variables/sheets/:id/delete", verifyCsrf, (req, res) => {
 });
 
 router.post("/variables/sheets/lists", verifyCsrf, (req, res) => {
-  const { sheetId, name, listName } = req.body;
-  if (!sheetId || !name || !listName) return redirectBack(res, null, "Barcha maydonlar to'ldirilishi shart");
-  sheetsCatalog.createList(sheetId, name.trim(), listName.trim());
+  const { sheetId, name } = req.body;
+  if (!sheetId || !name) return redirectBack(res, null, "Barcha maydonlar to'ldirilishi shart");
+  sheetsCatalog.createList(sheetId, name.trim());
   recordAdminAction("variable_create", "sheet_list", name);
   redirectBack(res, "List qo'shildi");
 });

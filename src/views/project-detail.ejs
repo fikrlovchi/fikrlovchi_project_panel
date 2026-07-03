@@ -101,7 +101,7 @@
               <% if (list.sheet_id !== lastSheetId) { if (lastSheetId !== null) { %></optgroup><% } %>
                 <optgroup label="<%= list.sheet.name %>">
               <% lastSheetId = list.sheet_id; } %>
-              <option value="<%= list.id %>" <%= linkedListIds.indexOf(list.id) !== -1 ? 'selected' : '' %>><%= list.name %> (<%= list.list_name %>)</option>
+              <option value="<%= list.id %>" <%= linkedListIds.indexOf(list.id) !== -1 ? 'selected' : '' %>><%= list.name %></option>
             <% }); %>
             <% if (lastSheetId !== null) { %></optgroup><% } %>
           </select>

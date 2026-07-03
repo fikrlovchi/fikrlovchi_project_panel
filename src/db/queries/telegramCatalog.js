@@ -58,28 +58,22 @@ function deleteTopic(id) {
   stmts.deleteTopic.run(id);
 }
 
-// Bots -> Chats -> Topics daraxtini bitta chaqiruvda yig'ib qaytaradi (sahifa render qilish uchun).
-function listAllForCatalog() {
-  const bots = stmts.listBots.all();
-  const chats = stmts.listAllChats.all();
-  const topics = stmts.listAllTopics.all();
-
-  return bots.map((bot) => ({
-    ...bot,
-    chats: chats
-      .filter((c) => c.bot_id === bot.id)
-      .map((chat) => ({
-        ...chat,
-        topics: topics.filter((t) => t.chat_id === chat.id),
-      })),
-  }));
-}
-
 // Loyiha sahifasidagi Chat/Topic select'larini to'ldirish uchun tekis ro'yxat.
 function listFlatChatsWithBot() {
   return stmts.listAllChats.all().map((chat) => ({
     ...chat,
     bot: getBot(chat.bot_id),
+  }));
+}
+
+// /variables sahifasidagi "Telegram chatlar" bo'limi uchun — chat botga
+// bog'langan holda, lekin bot ichiga uyalanmagan (mustaqil) tekis ro'yxat,
+// har bir chat o'zining topic'lari bilan.
+function listChatsWithTopics() {
+  const topics = stmts.listAllTopics.all();
+  return listFlatChatsWithBot().map((chat) => ({
+    ...chat,
+    topics: topics.filter((t) => t.chat_id === chat.id),
   }));
 }
 
@@ -103,7 +97,7 @@ module.exports = {
   getTopic,
   createTopic,
   deleteTopic,
-  listAllForCatalog,
   listFlatChatsWithBot,
   listFlatTopicsWithChat,
+  listChatsWithTopics,
 };

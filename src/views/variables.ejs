@@ -33,48 +33,6 @@
           <summary><%= bot.name %> <span class="muted-inline">(<%= bot.botTokenMasked %>)</span></summary>
           <div class="variable-body">
             <div class="muted-inline">Bog'langan loyihalar: <%- projectChipsHtml(bot.linkedProjects) %></div>
-
-            <% bot.chats.forEach(function (chat) { %>
-              <details class="variable-node nested">
-                <summary><%= chat.name %> <span class="muted-inline">(chat_id: <%= chat.chat_id %>)</span></summary>
-                <div class="variable-body">
-                  <div class="muted-inline">Bog'langan loyihalar (topicsiz): <%- projectChipsHtml(chat.linkedProjects) %></div>
-
-                  <% chat.topics.forEach(function (topic) { %>
-                    <div class="variable-leaf">
-                      <strong><%= topic.name %></strong> <span class="muted-inline">(topic_id: <%= topic.topic_id %>)</span>
-                      — <%- projectChipsHtml(topic.linkedProjects) %>
-                      <form method="post" action="/variables/telegram/topics/<%= topic.id %>/delete" style="display:inline;">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                        <button type="submit" class="link-btn">o'chirish</button>
-                      </form>
-                    </div>
-                  <% }); %>
-
-                  <form method="post" action="/variables/telegram/topics" class="controls">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                    <input type="hidden" name="chatId" value="<%= chat.id %>" />
-                    <input type="text" name="name" placeholder="Topic nomi" required />
-                    <input type="text" name="topicId" placeholder="Topic ID" required />
-                    <button type="submit">+ Topic qo'shish</button>
-                  </form>
-
-                  <form method="post" action="/variables/telegram/chats/<%= chat.id %>/delete">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                    <button type="submit" class="link-btn">Chatni o'chirish</button>
-                  </form>
-                </div>
-              </details>
-            <% }); %>
-
-            <form method="post" action="/variables/telegram/chats" class="controls">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="botId" value="<%= bot.id %>" />
-              <input type="text" name="name" placeholder="Chat nomi" required />
-              <input type="text" name="chatId" placeholder="Chat ID" required />
-              <button type="submit">+ Chat qo'shish</button>
-            </form>
-
             <form method="post" action="/variables/telegram/bots/<%= bot.id %>/delete">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button type="submit" class="link-btn">Botni o'chirish</button>
@@ -92,6 +50,56 @@
     </div>
 
     <div class="card">
+      <strong>Telegram chatlar</strong>
+
+      <% telegramChats.forEach(function (chat) { %>
+        <details class="variable-node">
+          <summary><%= chat.name %> <span class="muted-inline">(chat_id: <%= chat.chat_id %> · bot: <%= chat.bot.name %>)</span></summary>
+          <div class="variable-body">
+            <div class="muted-inline">Bog'langan loyihalar (topicsiz): <%- projectChipsHtml(chat.linkedProjects) %></div>
+
+            <% chat.topics.forEach(function (topic) { %>
+              <div class="variable-leaf">
+                <strong><%= topic.name %></strong> <span class="muted-inline">(topic_id: <%= topic.topic_id %>)</span>
+                — <%- projectChipsHtml(topic.linkedProjects) %>
+                <form method="post" action="/variables/telegram/topics/<%= topic.id %>/delete" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="link-btn">o'chirish</button>
+                </form>
+              </div>
+            <% }); %>
+
+            <form method="post" action="/variables/telegram/topics" class="controls">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="chatId" value="<%= chat.id %>" />
+              <input type="text" name="name" placeholder="Topic nomi" required />
+              <input type="text" name="topicId" placeholder="Topic ID" required />
+              <button type="submit">+ Topic qo'shish</button>
+            </form>
+
+            <form method="post" action="/variables/telegram/chats/<%= chat.id %>/delete">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="link-btn">Chatni o'chirish</button>
+            </form>
+          </div>
+        </details>
+      <% }); %>
+
+      <form method="post" action="/variables/telegram/chats" class="controls">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <select name="botId" required>
+          <option value="">— Bot tanlang —</option>
+          <% telegramBots.forEach(function (bot) { %>
+            <option value="<%= bot.id %>"><%= bot.name %></option>
+          <% }); %>
+        </select>
+        <input type="text" name="name" placeholder="Chat nomi" required />
+        <input type="text" name="chatId" placeholder="Chat ID" required />
+        <button type="submit">+ Chat qo'shish</button>
+      </form>
+    </div>
+
+    <div class="card">
       <strong>Google Sheets</strong>
 
       <% sheets.forEach(function (sheet) { %>
@@ -102,7 +110,7 @@
 
             <% sheet.lists.forEach(function (list) { %>
               <div class="variable-leaf">
-                <strong><%= list.name %></strong> <span class="muted-inline">(list: <%= list.list_name %>)</span>
+                <strong><%= list.name %></strong>
                 — <%- projectChipsHtml(list.linkedProjects) %>
                 <form method="post" action="/variables/sheets/lists/<%= list.id %>/delete" style="display:inline;">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -114,8 +122,7 @@
             <form method="post" action="/variables/sheets/lists" class="controls">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <input type="hidden" name="sheetId" value="<%= sheet.id %>" />
-              <input type="text" name="name" placeholder="List nomi (masalan: Buyurtmalar)" required />
-              <input type="text" name="listName" placeholder="Varoq nomi (masalan: uzum_order)" required />
+              <input type="text" name="name" placeholder="Varoq nomi (masalan: uzum_order)" required />
               <button type="submit">+ List qo'shish</button>
             </form>
 

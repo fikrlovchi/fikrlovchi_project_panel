@@ -9,7 +9,7 @@ const stmts = {
   listListsBySheet: db.prepare("SELECT * FROM sheet_lists WHERE sheet_id = ? ORDER BY name"),
   listAllLists: db.prepare("SELECT * FROM sheet_lists ORDER BY name"),
   getList: db.prepare("SELECT * FROM sheet_lists WHERE id = ?"),
-  createList: db.prepare("INSERT INTO sheet_lists (sheet_id, name, list_name) VALUES (?, ?, ?)"),
+  createList: db.prepare("INSERT INTO sheet_lists (sheet_id, name) VALUES (?, ?)"),
   deleteList: db.prepare("DELETE FROM sheet_lists WHERE id = ?"),
 };
 
@@ -32,8 +32,8 @@ function listListsBySheet(sheetId) {
 function getList(id) {
   return stmts.getList.get(id);
 }
-function createList(sheetId, name, listName) {
-  return stmts.createList.run(sheetId, name, listName).lastInsertRowid;
+function createList(sheetId, name) {
+  return stmts.createList.run(sheetId, name).lastInsertRowid;
 }
 function deleteList(id) {
   stmts.deleteList.run(id);
