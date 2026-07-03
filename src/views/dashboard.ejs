@@ -28,7 +28,7 @@
         </div>
         <% if (p.latestRun) { %>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;">
-            Oxirgi ishga tushish: <%= p.latestRun.started_at %> — <%= p.latestRun.success_count %> muvaffaqiyat, <%= p.latestRun.error_count %> xato
+            Oxirgi ishga tushish: <%= formatTashkent(p.latestRun.started_at) %> — <%= p.latestRun.success_count %> muvaffaqiyat, <%= p.latestRun.error_count %> xato
           </div>
         <% } else { %>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;">Hali hisobot kelmagan</div>

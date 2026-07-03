@@ -4,10 +4,20 @@ const runs = require("../db/queries/runs");
 const logEvents = require("../db/queries/logEvents");
 const manageableUnits = require("../config/manageable-units");
 const systemdControl = require("../services/systemdControl");
+const envFileEditor = require("../services/envFileEditor");
 const { ensureCsrfToken } = require("../middleware/csrf");
+const { formatTashkent } = require("../utils/formatDate");
 
 const router = express.Router();
 const PAGE_SIZE = 20;
+
+// Soniyani eng o'qilishi qulay birlikka aylantiradi (forma uchun boshlang'ich qiymat).
+function secondsToAmountUnit(totalSeconds) {
+  if (totalSeconds == null) return { amount: "", unit: "min" };
+  if (totalSeconds % 3600 === 0) return { amount: totalSeconds / 3600, unit: "h" };
+  if (totalSeconds % 60 === 0) return { amount: totalSeconds / 60, unit: "min" };
+  return { amount: totalSeconds, unit: "s" };
+}
 
 router.get("/projects/:slug", async (req, res) => {
   const project = projects.getBySlug(req.params.slug);
@@ -20,8 +30,10 @@ router.get("/projects/:slug", async (req, res) => {
   const logsByRun = {};
   for (const r of runList) logsByRun[r.id] = logEvents.listForRun(r.id);
 
-  const isManaged = Boolean(manageableUnits[project.slug]);
-  const intervalMinutes = systemdControl.getConfiguredIntervalMinutes(project.slug);
+  const unit = manageableUnits[project.slug];
+  const isManaged = Boolean(unit);
+  const intervalSeconds = systemdControl.getConfiguredIntervalSeconds(project.slug);
+  const intervalInput = secondsToAmountUnit(intervalSeconds);
 
   let liveStatus = null;
   if (isManaged) {
@@ -32,6 +44,16 @@ router.get("/projects/:slug", async (req, res) => {
     }
   }
 
+  let telegramConfig = null;
+  if (unit && unit.envPath && unit.telegramEnvKeys) {
+    const raw = envFileEditor.readEnvValues(unit.envPath, Object.values(unit.telegramEnvKeys));
+    telegramConfig = {
+      botTokenMasked: envFileEditor.maskSecret(raw[unit.telegramEnvKeys.botToken]),
+      chatId: raw[unit.telegramEnvKeys.chatId] || "",
+      topicId: raw[unit.telegramEnvKeys.topicId] || "",
+    };
+  }
+
   res.render("project-detail", {
     project,
     runs: runList,
@@ -40,11 +62,13 @@ router.get("/projects/:slug", async (req, res) => {
     page,
     pageSize: PAGE_SIZE,
     isManaged,
-    intervalMinutes,
+    intervalInput,
     liveStatus,
+    telegramConfig,
     csrfToken: ensureCsrfToken(req),
     actionMessage: req.query.ok,
     errorMessage: req.query.error,
+    formatTashkent,
   });
 });
 

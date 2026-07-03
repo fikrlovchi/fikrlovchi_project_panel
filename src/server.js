@@ -10,6 +10,7 @@ const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboard");
 const projectDetailRoutes = require("./routes/projectDetail");
 const projectControlRoutes = require("./routes/projectControl");
+const accountRoutes = require("./routes/account");
 const ingestRoutes = require("./routes/ingest");
 const { startPruningJob } = require("./services/pruning");
 
@@ -45,6 +46,7 @@ app.use(authRoutes);
 app.use(requireAuth, dashboardRoutes);
 app.use(requireAuth, projectDetailRoutes);
 app.use(requireAuth, projectControlRoutes);
+app.use(requireAuth, accountRoutes);
 
 startPruningJob();
 

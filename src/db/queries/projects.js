@@ -8,6 +8,7 @@ const stmts = {
     VALUES (@slug, @displayName, @apiKeyHash, @systemdService, @systemdTimer)
   `),
   setPaused: db.prepare("UPDATE projects SET is_paused = ? WHERE slug = ?"),
+  updateDisplayName: db.prepare("UPDATE projects SET display_name = ? WHERE slug = ?"),
 };
 
 function getBySlug(slug) {
@@ -27,4 +28,8 @@ function setPaused(slug, isPaused) {
   stmts.setPaused.run(isPaused ? 1 : 0, slug);
 }
 
-module.exports = { getBySlug, listAll, create, setPaused };
+function updateDisplayName(slug, displayName) {
+  stmts.updateDisplayName.run(displayName, slug);
+}
+
+module.exports = { getBySlug, listAll, create, setPaused, updateDisplayName };

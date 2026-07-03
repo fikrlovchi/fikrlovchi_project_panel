@@ -4,6 +4,7 @@ const runs = require("../db/queries/runs");
 const logEvents = require("../db/queries/logEvents");
 const manageableUnits = require("../config/manageable-units");
 const systemdControl = require("../services/systemdControl");
+const { formatTashkent } = require("../utils/formatDate");
 
 const router = express.Router();
 
@@ -11,12 +12,12 @@ router.get("/", (req, res) => {
   const list = projects.listAll().map((p) => {
     const latestRun = runs.latestForProject(p.id);
     const latestError = logEvents.latestErrorForProject(p.id);
-    const intervalMinutes = systemdControl.getConfiguredIntervalMinutes(p.slug);
+    const intervalSeconds = systemdControl.getConfiguredIntervalSeconds(p.slug);
 
     let stale = false;
-    if (latestRun && intervalMinutes) {
+    if (latestRun && intervalSeconds) {
       const ageMs = Date.now() - new Date(latestRun.started_at).getTime();
-      stale = ageMs > intervalMinutes * 3 * 60 * 1000;
+      stale = ageMs > intervalSeconds * 3 * 1000;
     }
 
     return {
@@ -28,7 +29,7 @@ router.get("/", (req, res) => {
     };
   });
 
-  res.render("dashboard", { projects: list, actionMessage: req.query.ok, errorMessage: req.query.error });
+  res.render("dashboard", { projects: list, actionMessage: req.query.ok, errorMessage: req.query.error, formatTashkent });
 });
 
 module.exports = router;

@@ -19,9 +19,9 @@ function runSystemctl(args) {
   return execFileAsync(SYSTEMCTL, args, { timeout: EXEC_TIMEOUT_MS });
 }
 
-async function setTimerInterval(slug, minutes) {
-  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
-    throw new Error("Interval 1 dan 1440 gacha (daqiqa) butun son bo'lishi kerak");
+async function setTimerInterval(slug, totalSeconds) {
+  if (!Number.isInteger(totalSeconds) || totalSeconds < 10 || totalSeconds > 86400) {
+    throw new Error("Interval 10 soniyadan 24 soatgacha (86400 soniya) butun son bo'lishi kerak");
   }
   const { timerUnit, timerUnitPath } = getUnitsOrThrow(slug);
   if (!timerUnit || !timerUnitPath) throw new Error(`"${slug}" uchun timer sozlanmagan`);
@@ -30,7 +30,7 @@ async function setTimerInterval(slug, minutes) {
   if (!/^OnUnitActiveSec=/m.test(content)) {
     throw new Error("Timer faylida OnUnitActiveSec= qatori topilmadi");
   }
-  const updated = content.replace(/^OnUnitActiveSec=.*$/m, `OnUnitActiveSec=${minutes}min`);
+  const updated = content.replace(/^OnUnitActiveSec=.*$/m, `OnUnitActiveSec=${totalSeconds}`);
 
   const tmpPath = `${timerUnitPath}.tmp`;
   fs.writeFileSync(tmpPath, updated);
@@ -77,12 +77,12 @@ async function getStatus(slug) {
   return { service: parseProps(serviceOut.stdout), timer: parseProps(timerOut.stdout) };
 }
 
-function getConfiguredIntervalMinutes(slug) {
+function getConfiguredIntervalSeconds(slug) {
   const entry = manageableUnits[slug];
   if (!entry || !entry.timerUnitPath) return null;
   try {
     const content = fs.readFileSync(entry.timerUnitPath, "utf8");
-    const match = content.match(/^OnUnitActiveSec=(\d+)min\s*$/m);
+    const match = content.match(/^OnUnitActiveSec=(\d+)\s*$/m);
     return match ? parseInt(match[1], 10) : null;
   } catch {
     return null;
@@ -95,6 +95,6 @@ module.exports = {
   resumeTimer,
   runNow,
   getStatus,
-  getConfiguredIntervalMinutes,
+  getConfiguredIntervalSeconds,
   UnmanagedProjectError,
 };

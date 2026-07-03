@@ -8,5 +8,11 @@ module.exports = {
     serviceUnit: 'uzum-order.service',
     timerUnit: 'uzum-order.timer',
     timerUnitPath: '/etc/systemd/system/uzum-order.timer',
+    envPath: '/root/uzumOrderToMC/.env',
+    telegramEnvKeys: {
+      botToken: 'TELEGRAM_BOT_TOKEN',
+      chatId: 'TELEGRAM_CHAT_ID',
+      topicId: 'TELEGRAM_TOPIC_ID',
+    },
   },
 };
