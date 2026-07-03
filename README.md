@@ -33,20 +33,34 @@ node scripts/seed-project.js <slug> "<Ko'rinadigan nom>" [systemd-service] [syst
 Bu bazaga loyihani qo'shadi va bir martalik API kalitni chiqaradi — uni loyihaning
 `.env` fayliga `PANEL_API_KEY` sifatida qo'ying.
 
+Loyiha shu **bir xil serverda** ishlasa, `.env`dagi `PANEL_INGEST_URL`ni
+`https://fikrlovchi.uz/...` emas, to'g'ridan-to'g'ri ilova portiga ko'rsating:
+
+```
+PANEL_INGEST_URL=http://127.0.0.1:3000/api/ingest/runs
+```
+
+(TLS/certbot o'rnatilgandan keyin nginx `Host: 127.0.0.1` bilan kelgan
+so'rovlarni hech qaysi server_name'ga mos kelmagani uchun `404` bilan
+qaytaradi — shuning uchun ichki so'rovlar nginx'ni chetlab o'tishi kerak.)
+
 Agar loyiha systemd orqali boshqarilishi kerak bo'lsa (interval o'zgartirish,
-pause/resume, run-now), `src/config/manageable-units.js` ga qo'shing:
+pause/resume, run-now, Muhit sozlamalari orqali `.env` bog'lash),
+`src/config/manageable-units.js` ga qo'shing:
 
 ```js
 'uzum-order-to-mc': {
   serviceUnit: 'uzum-order.service',
   timerUnit: 'uzum-order.timer',
   timerUnitPath: '/etc/systemd/system/uzum-order.timer',
+  envPath: '/root/uzum-order-to-mc/.env', // Muhit sozlamalari kartasi uchun (ixtiyoriy)
 },
 ```
 
 Bu **qasddan** kod orqali qilinadi (baza orqali emas) — xavfsizlik uchun: panel
-root huquqi bilan systemd buyruqlarini bajaradi, shuning uchun qaysi unit'larga
-tegishi mumkinligi faqat deploy qilingan kodda aniqlanadi.
+root huquqi bilan systemd buyruqlarini bajaradi va ixtiyoriy fayllarni yozadi,
+shuning uchun qaysi unit/fayllarga tegishi mumkinligi faqat deploy qilingan
+kodda aniqlanadi.
 
 ---
 
