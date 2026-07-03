@@ -132,3 +132,4 @@ git pull
 npm ci --omit=dev
 sudo systemctl restart fikrlovchi-panel
 ```
+"# fikrlovchi_project_panel" 
