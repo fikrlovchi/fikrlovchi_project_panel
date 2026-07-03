@@ -10,4 +10,10 @@ module.exports = {
     timerUnitPath: '/etc/systemd/system/uzum-order.timer',
     envPath: '/root/uzumOrderToMC/.env',
   },
+  'cancel-uzum-order': {
+    serviceUnit: 'cancel-uzum-order.service',
+    timerUnit: 'cancel-uzum-order.timer',
+    timerUnitPath: '/etc/systemd/system/cancel-uzum-order.timer',
+    envPath: '/root/cancelUzumOrder/.env',
+  },
 };
