@@ -17,6 +17,12 @@ const { startPruningJob } = require("./services/pruning");
 
 const app = express();
 
+// nginx TLS'ni tugatib, 127.0.0.1:3000ga oddiy HTTP orqali uzatadi — shuning
+// uchun Express'ga proxy'dan kelgan X-Forwarded-Proto'ga ishonishni aytish
+// kerak, aks holda COOKIE_SECURE=true bilan session cookie hech qachon
+// o'rnatilmaydi (req.secure doim false bo'lib qoladi).
+app.set("trust proxy", 1);
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "..", "public")));
