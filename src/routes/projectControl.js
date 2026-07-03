@@ -3,9 +3,10 @@ const projects = require("../db/queries/projects");
 const systemdControl = require("../services/systemdControl");
 const envFileEditor = require("../services/envFileEditor");
 const manageableUnits = require("../config/manageable-units");
-const telegramCatalog = require("../db/queries/telegramCatalog");
 const sheetsCatalog = require("../db/queries/sheetsCatalog");
 const variableLinks = require("../db/queries/variableLinks");
+const envBindings = require("../db/queries/envBindings");
+const { resolveValue, sourceLabel } = require("../services/envSourceResolver");
 const { recordAdminAction } = require("../services/auditLog");
 const { verifyCsrf } = require("../middleware/csrf");
 
@@ -42,40 +43,55 @@ router.post("/projects/:slug/interval", verifyCsrf, (req, res) => {
   );
 });
 
-router.post("/projects/:slug/telegram", verifyCsrf, (req, res) => {
+router.post("/projects/:slug/env-bindings", verifyCsrf, (req, res) => {
   const { slug } = req.params;
   const unit = manageableUnits[slug];
-  if (!unit || !unit.envPath || !unit.telegramEnvKeys) {
-    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Bu loyiha uchun Telegram sozlamalari mavjud emas")}`);
+  if (!unit || !unit.envPath) {
+    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Bu loyiha uchun muhit sozlamalari mavjud emas")}`);
   }
 
   const project = projects.getBySlug(slug);
-  const chatId = parseInt(req.body.chatId, 10);
-  const topicId = req.body.topicId ? parseInt(req.body.topicId, 10) : null;
+  const envKey = (req.body.envKey || "").trim().toUpperCase();
+  const [sourceType, sourceIdRaw] = (req.body.source || "").split(":");
+  const sourceId = parseInt(sourceIdRaw, 10);
 
-  const chat = chatId ? telegramCatalog.getChat(chatId) : null;
-  if (!chat) {
-    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Chat tanlanmadi")}`);
+  if (!envKey || !/^[A-Z_][A-Z0-9_]*$/.test(envKey)) {
+    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("ENV kaliti noto'g'ri (faqat harf/raqam/pastki chiziq)")}`);
   }
-  const bot = telegramCatalog.getBot(chat.bot_id);
-  const topic = topicId ? telegramCatalog.getTopic(topicId) : null;
-  if (topicId && (!topic || topic.chat_id !== chat.id)) {
-    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Topic tanlangan chatga tegishli emas")}`);
+  const value = sourceId ? resolveValue(sourceType, sourceId) : null;
+  if (value == null) {
+    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Manba tanlanmadi yoki topilmadi")}`);
   }
 
   redirectWithResult(
     res,
     slug,
     Promise.resolve().then(() => {
-      envFileEditor.updateEnvValues(unit.envPath, {
-        [unit.telegramEnvKeys.botToken]: bot.bot_token,
-        [unit.telegramEnvKeys.chatId]: chat.chat_id,
-        [unit.telegramEnvKeys.topicId]: topic ? topic.topic_id : "",
-      });
-      variableLinks.setTelegramLink(project.id, chat.id, topic ? topic.id : null);
+      envFileEditor.updateEnvValues(unit.envPath, { [envKey]: value });
+      envBindings.upsert(project.id, envKey, sourceType, sourceId);
     }),
-    "telegram_update",
-    `${bot.name} / ${chat.name}${topic ? " / " + topic.name : ""}`
+    "env_binding_update",
+    `${envKey} ← ${sourceLabel(sourceType, sourceId)}`
+  );
+});
+
+router.post("/projects/:slug/env-bindings/:id/delete", verifyCsrf, (req, res) => {
+  const { slug } = req.params;
+  const unit = manageableUnits[slug];
+  const binding = envBindings.getById(req.params.id);
+  if (!unit || !unit.envPath || !binding) {
+    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Bog'lanish topilmadi")}`);
+  }
+
+  redirectWithResult(
+    res,
+    slug,
+    Promise.resolve().then(() => {
+      envFileEditor.removeEnvKeys(unit.envPath, [binding.env_key]);
+      envBindings.remove(binding.id);
+    }),
+    "env_binding_delete",
+    binding.env_key
   );
 });
 

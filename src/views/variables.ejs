@@ -141,6 +141,75 @@
         <button type="submit">+ Sheet qo'shish</button>
       </form>
     </div>
+
+    <div class="card">
+      <strong>Tokenlar</strong>
+      <div class="muted-inline">MoySklad, RetailCRM va shu kabi oddiy nom+token juftliklar uchun.</div>
+
+      <% tokens.forEach(function (token) { %>
+        <details class="variable-node">
+          <summary><%= token.name %> <span class="muted-inline">(<%= token.tokenMasked %>)</span></summary>
+          <div class="variable-body">
+            <div class="muted-inline">Bog'langan loyihalar: <%- projectChipsHtml(token.linkedProjects) %></div>
+            <form method="post" action="/variables/tokens/<%= token.id %>/delete">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="link-btn">Tokenni o'chirish</button>
+            </form>
+          </div>
+        </details>
+      <% }); %>
+
+      <form method="post" action="/variables/tokens" class="controls">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="text" name="name" placeholder="Nomi (masalan: MoySklad — asosiy)" required />
+        <input type="text" name="token" placeholder="Token" required />
+        <button type="submit">+ Token qo'shish</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <strong>Uzum kabinetlar</strong>
+
+      <% uzumCabinets.forEach(function (cabinet) { %>
+        <details class="variable-node">
+          <summary><%= cabinet.name %> <span class="muted-inline">(<%= cabinet.tokenMasked %>)</span></summary>
+          <div class="variable-body">
+            <div class="muted-inline">Bog'langan loyihalar (do'konsiz): <%- projectChipsHtml(cabinet.linkedProjects) %></div>
+
+            <% cabinet.shops.forEach(function (shop) { %>
+              <div class="variable-leaf">
+                <strong><%= shop.name %></strong> <span class="muted-inline">(shop_id: <%= shop.shop_id %>)</span>
+                — <%- projectChipsHtml(shop.linkedProjects) %>
+                <form method="post" action="/variables/uzum/shops/<%= shop.id %>/delete" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="link-btn">o'chirish</button>
+                </form>
+              </div>
+            <% }); %>
+
+            <form method="post" action="/variables/uzum/shops" class="controls">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="cabinetId" value="<%= cabinet.id %>" />
+              <input type="text" name="name" placeholder="Do'kon nomi" required />
+              <input type="text" name="shopId" placeholder="Shop ID" required />
+              <button type="submit">+ Do'kon qo'shish</button>
+            </form>
+
+            <form method="post" action="/variables/uzum/cabinets/<%= cabinet.id %>/delete">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="link-btn">Kabinetni o'chirish</button>
+            </form>
+          </div>
+        </details>
+      <% }); %>
+
+      <form method="post" action="/variables/uzum/cabinets" class="controls">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="text" name="name" placeholder="Kabinet nomi" required />
+        <input type="text" name="token" placeholder="Kabinet token" required />
+        <button type="submit">+ Kabinet qo'shish</button>
+      </form>
+    </div>
   </main>
 </body>
 </html>

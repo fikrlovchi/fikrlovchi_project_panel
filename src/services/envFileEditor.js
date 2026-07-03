@@ -46,10 +46,26 @@ function updateEnvValues(envPath, updates) {
   fs.renameSync(tmpPath, envPath);
 }
 
+// Berilgan kalitlarga mos qatorlarni faylning o'zidan butunlay olib tashlaydi.
+function removeEnvKeys(envPath, keys) {
+  if (!fs.existsSync(envPath)) return;
+  const keySet = new Set(keys);
+  const lines = parseEnvLines(fs.readFileSync(envPath, "utf8")).filter((line) => {
+    const idx = line.indexOf("=");
+    if (idx <= 0) return true;
+    return !keySet.has(line.slice(0, idx));
+  });
+
+  while (lines.length && lines[lines.length - 1] === "") lines.pop();
+  const tmpPath = `${envPath}.tmp`;
+  fs.writeFileSync(tmpPath, lines.join("\n") + "\n");
+  fs.renameSync(tmpPath, envPath);
+}
+
 function maskSecret(value) {
   if (!value) return "";
   if (value.length <= 4) return "•".repeat(value.length);
   return "•".repeat(value.length - 4) + value.slice(-4);
 }
 
-module.exports = { readEnvValues, updateEnvValues, maskSecret };
+module.exports = { readEnvValues, updateEnvValues, removeEnvKeys, maskSecret };

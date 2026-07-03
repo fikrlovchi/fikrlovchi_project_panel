@@ -6,9 +6,35 @@ const manageableUnits = require("../config/manageable-units");
 const systemdControl = require("../services/systemdControl");
 const telegramCatalog = require("../db/queries/telegramCatalog");
 const sheetsCatalog = require("../db/queries/sheetsCatalog");
+const apiTokens = require("../db/queries/apiTokens");
+const uzumCatalog = require("../db/queries/uzumCatalog");
 const variableLinks = require("../db/queries/variableLinks");
+const envBindingsQuery = require("../db/queries/envBindings");
+const { sourceLabel } = require("../services/envSourceResolver");
 const { ensureCsrfToken } = require("../middleware/csrf");
 const { formatTashkent } = require("../utils/formatDate");
+
+// Loyiha sahifasidagi "Muhit sozlamalari" kartasida bitta select ichida
+// barcha katalog turlarini optgroup qilib ko'rsatish uchun.
+function buildEnvSourceGroups() {
+  return [
+    { label: "Telegram botlar", options: telegramCatalog.listBots().map((b) => ({ value: `telegram_bot:${b.id}`, text: b.name })) },
+    {
+      label: "Telegram chatlar",
+      options: telegramCatalog.listFlatChatsWithBot().map((c) => ({ value: `telegram_chat:${c.id}`, text: `${c.name} (bot: ${c.bot.name})` })),
+    },
+    {
+      label: "Telegram topiclar",
+      options: telegramCatalog.listFlatTopicsWithChat().map((t) => ({ value: `telegram_topic:${t.id}`, text: `${t.chat.name} / ${t.name}` })),
+    },
+    { label: "Tokenlar", options: apiTokens.list().map((t) => ({ value: `api_token:${t.id}`, text: t.name })) },
+    { label: "Uzum kabinetlar", options: uzumCatalog.listCabinets().map((c) => ({ value: `uzum_cabinet:${c.id}`, text: c.name })) },
+    {
+      label: "Uzum do'konlar",
+      options: uzumCatalog.listFlatShopsWithCabinet().map((s) => ({ value: `uzum_shop:${s.id}`, text: `${s.cabinet.name} / ${s.name}` })),
+    },
+  ].filter((group) => group.options.length > 0);
+}
 
 const router = express.Router();
 const PAGE_SIZE = 20;
@@ -46,10 +72,11 @@ router.get("/projects/:slug", async (req, res) => {
     }
   }
 
-  const canLinkTelegram = Boolean(unit && unit.envPath && unit.telegramEnvKeys);
-  const telegramChats = telegramCatalog.listFlatChatsWithBot();
-  const telegramTopics = telegramCatalog.listFlatTopicsWithChat();
-  const currentTelegramLink = variableLinks.getTelegramLinkForProject(project.id);
+  const canManageEnv = Boolean(unit && unit.envPath);
+  const envSourceGroups = canManageEnv ? buildEnvSourceGroups() : [];
+  const envBindingRows = canManageEnv
+    ? envBindingsQuery.listForProject(project.id).map((b) => ({ ...b, label: sourceLabel(b.source_type, b.source_id) }))
+    : [];
 
   const sheets = sheetsCatalog.listSheets();
   const sheetLists = sheetsCatalog.listFlatListsWithSheet();
@@ -65,10 +92,9 @@ router.get("/projects/:slug", async (req, res) => {
     isManaged,
     intervalInput,
     liveStatus,
-    canLinkTelegram,
-    telegramChats,
-    telegramTopics,
-    currentTelegramLink,
+    canManageEnv,
+    envSourceGroups,
+    envBindingRows,
     sheets,
     sheetLists,
     currentSheetLinks,

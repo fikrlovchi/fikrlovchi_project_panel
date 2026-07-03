@@ -56,32 +56,48 @@
       </div>
     <% } %>
 
-    <% if (canLinkTelegram) { %>
+    <% if (canManageEnv) { %>
       <div class="card">
-        <strong>Telegram sozlamalari</strong>
-        <% if (telegramChats.length === 0) { %>
-          <div class="muted-inline">Hali bot/chat qo'shilmagan. <a href="/variables">O'zgaruvchilar</a> sahifasida qo'shing.</div>
+        <strong>Muhit sozlamalari</strong>
+        <div class="muted-inline">Loyihaning `.env` fayliga yoziladigan qiymatlar — Telegram, tokenlar, Uzum va h.k.</div>
+
+        <% if (envBindingRows.length > 0) { %>
+          <table>
+            <thead><tr><th>ENV kaliti</th><th>Manba</th><th></th></tr></thead>
+            <tbody>
+              <% envBindingRows.forEach(function (b) { %>
+                <tr>
+                  <td><code><%= b.env_key %></code></td>
+                  <td><%= b.label %></td>
+                  <td>
+                    <form method="post" action="/projects/<%= project.slug %>/env-bindings/<%= b.id %>/delete">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                      <button type="submit" class="link-btn">o'chirish</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } %>
+
+        <% if (envSourceGroups.length === 0) { %>
+          <div class="muted-inline">Hali hech qanday katalog elementi yo'q. <a href="/variables">O'zgaruvchilar</a> sahifasida qo'shing.</div>
         <% } else { %>
-          <form method="post" action="/projects/<%= project.slug %>/telegram" class="controls" id="telegram-link-form">
+          <form method="post" action="/projects/<%= project.slug %>/env-bindings" class="controls">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-            <select name="chatId" id="telegram-chat-select" required>
-              <option value="">— Chat tanlang —</option>
-              <% var lastBotId = null; %>
-              <% telegramChats.forEach(function (chat) { %>
-                <% if (chat.bot_id !== lastBotId) { if (lastBotId !== null) { %></optgroup><% } %>
-                  <optgroup label="<%= chat.bot.name %>">
-                <% lastBotId = chat.bot_id; } %>
-                <option value="<%= chat.id %>" <%= currentTelegramLink && currentTelegramLink.chat_id === chat.id ? 'selected' : '' %>><%= chat.name %></option>
-              <% }); %>
-              <% if (lastBotId !== null) { %></optgroup><% } %>
-            </select>
-            <select name="topicId" id="telegram-topic-select">
-              <option value="">— Topic yo'q —</option>
-              <% telegramTopics.forEach(function (topic) { %>
-                <option value="<%= topic.id %>" data-chat-id="<%= topic.chat_id %>" <%= currentTelegramLink && currentTelegramLink.topic_id === topic.id ? 'selected' : '' %>><%= topic.chat.name %> / <%= topic.name %></option>
+            <input type="text" name="envKey" placeholder="ENV_KEY nomi (masalan TELEGRAM_CHAT_ID)" required />
+            <select name="source" required>
+              <option value="">— Manba tanlang —</option>
+              <% envSourceGroups.forEach(function (group) { %>
+                <optgroup label="<%= group.label %>">
+                  <% group.options.forEach(function (opt) { %>
+                    <option value="<%= opt.value %>"><%= opt.text %></option>
+                  <% }); %>
+                </optgroup>
               <% }); %>
             </select>
-            <button type="submit">Saqlash</button>
+            <button type="submit">Bog'lash</button>
           </form>
         <% } %>
       </div>
@@ -145,6 +161,5 @@
       </div>
     </div>
   </main>
-  <script src="/project-detail.js"></script>
 </body>
 </html>

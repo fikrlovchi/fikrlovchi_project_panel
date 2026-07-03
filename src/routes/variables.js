@@ -1,7 +1,10 @@
 const express = require("express");
 const telegramCatalog = require("../db/queries/telegramCatalog");
 const sheetsCatalog = require("../db/queries/sheetsCatalog");
+const apiTokens = require("../db/queries/apiTokens");
+const uzumCatalog = require("../db/queries/uzumCatalog");
 const variableLinks = require("../db/queries/variableLinks");
+const envBindings = require("../db/queries/envBindings");
 const envFileEditor = require("../services/envFileEditor");
 const { recordAdminAction } = require("../services/auditLog");
 const { ensureCsrfToken, verifyCsrf } = require("../middleware/csrf");
@@ -17,15 +20,15 @@ router.get("/variables", (req, res) => {
   const telegramBots = telegramCatalog.listBots().map((bot) => ({
     ...bot,
     botTokenMasked: envFileEditor.maskSecret(bot.bot_token),
-    linkedProjects: variableLinks.getProjectsLinkedToBot(bot.id),
+    linkedProjects: envBindings.getProjectsForSource("telegram_bot", bot.id),
   }));
 
   const telegramChats = telegramCatalog.listChatsWithTopics().map((chat) => ({
     ...chat,
-    linkedProjects: variableLinks.getProjectsLinkedToChat(chat.id),
+    linkedProjects: envBindings.getProjectsForSource("telegram_chat", chat.id),
     topics: chat.topics.map((topic) => ({
       ...topic,
-      linkedProjects: variableLinks.getProjectsLinkedToTopic(topic.id),
+      linkedProjects: envBindings.getProjectsForSource("telegram_topic", topic.id),
     })),
   }));
 
@@ -38,10 +41,28 @@ router.get("/variables", (req, res) => {
     })),
   }));
 
+  const tokens = apiTokens.list().map((token) => ({
+    ...token,
+    tokenMasked: envFileEditor.maskSecret(token.token),
+    linkedProjects: envBindings.getProjectsForSource("api_token", token.id),
+  }));
+
+  const uzumCabinets = uzumCatalog.listCabinetsWithShops().map((cabinet) => ({
+    ...cabinet,
+    tokenMasked: envFileEditor.maskSecret(cabinet.token),
+    linkedProjects: envBindings.getProjectsForSource("uzum_cabinet", cabinet.id),
+    shops: cabinet.shops.map((shop) => ({
+      ...shop,
+      linkedProjects: envBindings.getProjectsForSource("uzum_shop", shop.id),
+    })),
+  }));
+
   res.render("variables", {
     telegramBots,
     telegramChats,
     sheets,
+    tokens,
+    uzumCabinets,
     csrfToken: ensureCsrfToken(req),
     actionMessage: req.query.ok,
     errorMessage: req.query.error,
@@ -118,6 +139,50 @@ router.post("/variables/sheets/lists/:id/delete", verifyCsrf, (req, res) => {
   sheetsCatalog.deleteList(req.params.id);
   recordAdminAction("variable_delete", "sheet_list", req.params.id);
   redirectBack(res, "List o'chirildi");
+});
+
+router.post("/variables/tokens", verifyCsrf, (req, res) => {
+  const name = (req.body.name || "").trim();
+  const token = (req.body.token || "").trim();
+  if (!name || !token) return redirectBack(res, null, "Nom va token to'ldirilishi shart");
+  apiTokens.create(name, token);
+  recordAdminAction("variable_create", "api_token", name);
+  redirectBack(res, "Token qo'shildi");
+});
+
+router.post("/variables/tokens/:id/delete", verifyCsrf, (req, res) => {
+  apiTokens.deleteToken(req.params.id);
+  recordAdminAction("variable_delete", "api_token", req.params.id);
+  redirectBack(res, "Token o'chirildi");
+});
+
+router.post("/variables/uzum/cabinets", verifyCsrf, (req, res) => {
+  const name = (req.body.name || "").trim();
+  const token = (req.body.token || "").trim();
+  if (!name || !token) return redirectBack(res, null, "Nom va token to'ldirilishi shart");
+  uzumCatalog.createCabinet(name, token);
+  recordAdminAction("variable_create", "uzum_cabinet", name);
+  redirectBack(res, "Kabinet qo'shildi");
+});
+
+router.post("/variables/uzum/cabinets/:id/delete", verifyCsrf, (req, res) => {
+  uzumCatalog.deleteCabinet(req.params.id);
+  recordAdminAction("variable_delete", "uzum_cabinet", req.params.id);
+  redirectBack(res, "Kabinet o'chirildi");
+});
+
+router.post("/variables/uzum/shops", verifyCsrf, (req, res) => {
+  const { cabinetId, name, shopId } = req.body;
+  if (!cabinetId || !name || !shopId) return redirectBack(res, null, "Barcha maydonlar to'ldirilishi shart");
+  uzumCatalog.createShop(cabinetId, name.trim(), shopId.trim());
+  recordAdminAction("variable_create", "uzum_shop", name);
+  redirectBack(res, "Do'kon qo'shildi");
+});
+
+router.post("/variables/uzum/shops/:id/delete", verifyCsrf, (req, res) => {
+  uzumCatalog.deleteShop(req.params.id);
+  recordAdminAction("variable_delete", "uzum_shop", req.params.id);
+  redirectBack(res, "Do'kon o'chirildi");
 });
 
 module.exports = router;
