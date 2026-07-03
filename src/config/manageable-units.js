@@ -4,9 +4,9 @@
 // aylanib o'tilsa ham) hujumchi bazaga yangi loyiha yozib, ixtiyoriy systemd
 // unit'ini boshqara olmaydi.
 module.exports = {
-  // 'uzum-order-to-mc': {
-  //   serviceUnit: 'uzum-order.service',
-  //   timerUnit: 'uzum-order.timer',
-  //   timerUnitPath: '/etc/systemd/system/uzum-order.timer',
-  // },
+  'uzum-order-to-mc': {
+    serviceUnit: 'uzum-order.service',
+    timerUnit: 'uzum-order.timer',
+    timerUnitPath: '/etc/systemd/system/uzum-order.timer',
+  },
 };
