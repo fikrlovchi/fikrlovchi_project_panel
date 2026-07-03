@@ -86,19 +86,38 @@
         <% } else { %>
           <form method="post" action="/projects/<%= project.slug %>/env-bindings" class="controls">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-            <input type="text" name="envKey" placeholder="ENV_KEY nomi (masalan TELEGRAM_CHAT_ID)" required />
-            <select name="source" required>
+            <input type="text" id="envKeyInput" name="envKey" placeholder="ENV_KEY nomi (manba tanlansa avtomatik to'ladi)" required />
+            <select id="envSourceSelect" name="source" required>
               <option value="">— Manba tanlang —</option>
               <% envSourceGroups.forEach(function (group) { %>
                 <optgroup label="<%= group.label %>">
                   <% group.options.forEach(function (opt) { %>
-                    <option value="<%= opt.value %>"><%= opt.text %></option>
+                    <option value="<%= opt.value %>" data-envkey="<%= opt.envKey || '' %>"><%= opt.text %></option>
                   <% }); %>
                 </optgroup>
               <% }); %>
             </select>
             <button type="submit">Bog'lash</button>
           </form>
+          <div class="muted-inline">ENV kaliti manbadan avtomatik hosil bo'ladi; kerak bo'lsa qo'lda tahrirlashingiz mumkin.</div>
+          <script>
+            (function () {
+              var sel = document.getElementById("envSourceSelect");
+              var key = document.getElementById("envKeyInput");
+              if (!sel || !key) return;
+              sel.addEventListener("change", function () {
+                var opt = sel.options[sel.selectedIndex];
+                var suggested = opt ? opt.getAttribute("data-envkey") : "";
+                if (!suggested) return;
+                // Admin qo'lda yozgan qiymatni buzmaymiz: faqat bo'sh yoki
+                // oldingi taklif turgan bo'lsa ustiga yozamiz.
+                if (key.value === "" || key.value === key.dataset.suggested) {
+                  key.value = suggested;
+                  key.dataset.suggested = suggested;
+                }
+              });
+            })();
+          </script>
         <% } %>
       </div>
     <% } %>

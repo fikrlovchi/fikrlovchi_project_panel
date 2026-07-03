@@ -14,24 +14,48 @@ const { sourceLabel } = require("../services/envSourceResolver");
 const { ensureCsrfToken } = require("../middleware/csrf");
 const { formatTashkent } = require("../utils/formatDate");
 
-// Loyiha sahifasidagi "Muhit sozlamalari" kartasida bitta select ichida
-// barcha katalog turlarini optgroup qilib ko'rsatish uchun.
+// Katalog elementi nomidan yaroqli ENV kalit bo'lagini hosil qiladi:
+// katta harf, harf/raqamdan boshqasi "_" ga, chetdagi "_" olib tashlanadi.
+// Kirill yoki bo'sh nomdan hech nima qolmasa, chaqiruvchi zaxira (id) beradi.
+function slugForEnv(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+// Uzum kabineti uchun ENV yorlig'i — cancelUzumOrder/packingUzumOrder
+// servislari `UZUM_TOKEN_<YORLIQ>` va `UZUM_SHOP_<YORLIQ>_<...>` ni bir xil
+// <YORLIQ> bo'yicha juftlashtiradi, shuning uchun kabinet tokeni va uning
+// do'konlari hamisha shu yagona funksiyadan hosil qilinadi.
+function cabinetEnvLabel(cabinet) {
+  return slugForEnv(cabinet.name) || `CAB${cabinet.id}`;
+}
+
+// Loyiha sahifasidagi "Muhit sozlamalari" kartasida bitta select ichida barcha
+// katalog turlarini optgroup qilib ko'rsatish uchun. Har bir option'ga tavsiya
+// etilgan ENV kaliti (envKey) qo'shiladi — UI uni avtomatik to'ldiradi, admin
+// istasa tahrirlaydi.
 function buildEnvSourceGroups() {
   return [
-    { label: "Telegram botlar", options: telegramCatalog.listBots().map((b) => ({ value: `telegram_bot:${b.id}`, text: b.name })) },
+    { label: "Telegram botlar", options: telegramCatalog.listBots().map((b) => ({ value: `telegram_bot:${b.id}`, text: b.name, envKey: "TELEGRAM_BOT_TOKEN" })) },
     {
       label: "Telegram chatlar",
-      options: telegramCatalog.listFlatChatsWithBot().map((c) => ({ value: `telegram_chat:${c.id}`, text: `${c.name} (bot: ${c.bot.name})` })),
+      options: telegramCatalog.listFlatChatsWithBot().map((c) => ({ value: `telegram_chat:${c.id}`, text: `${c.name} (bot: ${c.bot.name})`, envKey: "TELEGRAM_CHAT_ID" })),
     },
     {
       label: "Telegram topiclar",
-      options: telegramCatalog.listFlatTopicsWithChat().map((t) => ({ value: `telegram_topic:${t.id}`, text: `${t.chat.name} / ${t.name}` })),
+      options: telegramCatalog.listFlatTopicsWithChat().map((t) => ({ value: `telegram_topic:${t.id}`, text: `${t.chat.name} / ${t.name}`, envKey: "TELEGRAM_TOPIC_ID" })),
     },
-    { label: "Tokenlar", options: apiTokens.list().map((t) => ({ value: `api_token:${t.id}`, text: t.name })) },
-    { label: "Uzum kabinetlar", options: uzumCatalog.listCabinets().map((c) => ({ value: `uzum_cabinet:${c.id}`, text: c.name })) },
+    { label: "Tokenlar", options: apiTokens.list().map((t) => ({ value: `api_token:${t.id}`, text: t.name, envKey: `${slugForEnv(t.name) || `TOKEN${t.id}`}_TOKEN` })) },
+    { label: "Uzum kabinetlar", options: uzumCatalog.listCabinets().map((c) => ({ value: `uzum_cabinet:${c.id}`, text: c.name, envKey: `UZUM_TOKEN_${cabinetEnvLabel(c)}` })) },
     {
       label: "Uzum do'konlar",
-      options: uzumCatalog.listFlatShopsWithCabinet().map((s) => ({ value: `uzum_shop:${s.id}`, text: `${s.cabinet.name} / ${s.name}` })),
+      options: uzumCatalog.listFlatShopsWithCabinet().map((s) => ({
+        value: `uzum_shop:${s.id}`,
+        text: `${s.cabinet.name} / ${s.name}`,
+        envKey: `UZUM_SHOP_${cabinetEnvLabel(s.cabinet)}_${slugForEnv(s.name) || `SHOP${s.id}`}`,
+      })),
     },
   ].filter((group) => group.options.length > 0);
 }
