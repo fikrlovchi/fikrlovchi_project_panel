@@ -36,6 +36,8 @@ app.use(
   })
 );
 
+app.get("/health", (req, res) => res.json({ ok: true }));
+
 // Ingest API authenticates projects via their own API key, not the admin session.
 app.use("/api/ingest", ingestRoutes);
 
@@ -43,8 +45,6 @@ app.use(authRoutes);
 app.use(requireAuth, dashboardRoutes);
 app.use(requireAuth, projectDetailRoutes);
 app.use(requireAuth, projectControlRoutes);
-
-app.get("/health", (req, res) => res.json({ ok: true }));
 
 startPruningJob();
 
