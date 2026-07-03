@@ -5,6 +5,8 @@
   --text: #e2e8f0;
   --muted: #94a3b8;
   --accent: #38bdf8;
+  --accent-green: #2ecc8f;
+  --gradient-accent: linear-gradient(135deg, #2ecc8f, #38bdf8);
   --danger: #f87171;
   --success: #4ade80;
   --warning: #fbbf24;
@@ -14,12 +16,15 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Montserrat", "Open Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
 
-a { color: var(--accent); }
+h1, h2, h3, strong { font-family: "Montserrat", -apple-system, "Segoe UI", sans-serif; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-green); text-decoration: underline; }
 
 .login-page {
   display: flex;
@@ -31,12 +36,13 @@ a { color: var(--accent); }
 .login-form {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 32px;
   width: 320px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: 0 0 0 1px rgba(46, 204, 143, .08), 0 20px 60px rgba(0, 0, 0, .4);
 }
 
 .login-form h1 {
@@ -64,11 +70,12 @@ a { color: var(--accent); }
 
 .login-form button {
   margin-top: 8px;
-  background: var(--accent);
+  background: var(--gradient-accent);
+  color: #0f172a;
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   padding: 10px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -88,9 +95,12 @@ header.topbar {
   align-items: center;
   padding: 16px 24px;
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(46, 204, 143, .04), transparent);
 }
 
 header.topbar h1 { font-size: 18px; margin: 0; }
+header.topbar h1 a { display: flex; align-items: center; gap: 10px; }
+header.topbar .logo { width: 28px; height: 28px; display: block; }
 
 main {
   padding: 24px;
@@ -101,10 +111,13 @@ main {
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 16px;
+  box-shadow: 0 0 0 1px rgba(46, 204, 143, .04);
+  transition: border-color .15s;
 }
+.card:hover { border-color: rgba(46, 204, 143, .35); }
 
 .project-row {
   display: flex;
@@ -146,19 +159,67 @@ th { color: var(--muted); font-weight: 600; }
 .log-line.ERROR { color: var(--danger); }
 .log-line.INFO { color: var(--text); }
 
-.controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
 .controls form { display: inline-flex; gap: 6px; align-items: center; }
-.controls button, .controls input[type=number] {
+.controls input, .controls select {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 6px;
-  padding: 6px 10px;
+  border-radius: 999px;
+  padding: 6px 12px;
   font-size: 13px;
-  cursor: pointer;
 }
-.controls button:hover { border-color: var(--accent); }
-.controls input[type=number] { width: 70px; cursor: text; }
+.controls input[type=number] { width: 70px; }
+.controls select[multiple] { border-radius: 10px; padding: 4px; }
+
+button, .controls button {
+  background: var(--gradient-accent);
+  color: #0f172a;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .1s, opacity .15s;
+}
+button:hover, .controls button:hover { opacity: .9; }
+button:active, .controls button:active { transform: scale(.97); }
 
 .pagination { margin-top: 12px; display: flex; gap: 8px; }
-.logout-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.logout-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.muted-inline { color: var(--muted); font-size: 12px; }
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.variable-node {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+.variable-node summary { cursor: pointer; font-weight: 600; }
+.variable-node.nested { margin-left: 16px; background: rgba(255,255,255,.02); }
+.variable-body { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.variable-leaf {
+  font-size: 13px;
+  padding: 6px 8px;
+  border-left: 2px solid var(--border);
+  margin-left: 8px;
+}

@@ -3,6 +3,9 @@ const projects = require("../db/queries/projects");
 const systemdControl = require("../services/systemdControl");
 const envFileEditor = require("../services/envFileEditor");
 const manageableUnits = require("../config/manageable-units");
+const telegramCatalog = require("../db/queries/telegramCatalog");
+const sheetsCatalog = require("../db/queries/sheetsCatalog");
+const variableLinks = require("../db/queries/variableLinks");
 const { recordAdminAction } = require("../services/auditLog");
 const { verifyCsrf } = require("../middleware/csrf");
 
@@ -46,22 +49,53 @@ router.post("/projects/:slug/telegram", verifyCsrf, (req, res) => {
     return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Bu loyiha uchun Telegram sozlamalari mavjud emas")}`);
   }
 
-  const { botToken, chatId, topicId } = req.body;
-  const updates = {};
-  if (botToken) updates[unit.telegramEnvKeys.botToken] = botToken.trim();
-  if (chatId) updates[unit.telegramEnvKeys.chatId] = chatId.trim();
-  if (topicId) updates[unit.telegramEnvKeys.topicId] = topicId.trim();
+  const project = projects.getBySlug(slug);
+  const chatId = parseInt(req.body.chatId, 10);
+  const topicId = req.body.topicId ? parseInt(req.body.topicId, 10) : null;
 
-  if (Object.keys(updates).length === 0) {
-    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Hech qanday qiymat kiritilmadi")}`);
+  const chat = chatId ? telegramCatalog.getChat(chatId) : null;
+  if (!chat) {
+    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Chat tanlanmadi")}`);
+  }
+  const bot = telegramCatalog.getBot(chat.bot_id);
+  const topic = topicId ? telegramCatalog.getTopic(topicId) : null;
+  if (topicId && (!topic || topic.chat_id !== chat.id)) {
+    return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Topic tanlangan chatga tegishli emas")}`);
   }
 
   redirectWithResult(
     res,
     slug,
-    Promise.resolve().then(() => envFileEditor.updateEnvValues(unit.envPath, updates)),
+    Promise.resolve().then(() => {
+      envFileEditor.updateEnvValues(unit.envPath, {
+        [unit.telegramEnvKeys.botToken]: bot.bot_token,
+        [unit.telegramEnvKeys.chatId]: chat.chat_id,
+        [unit.telegramEnvKeys.topicId]: topic ? topic.topic_id : "",
+      });
+      variableLinks.setTelegramLink(project.id, chat.id, topic ? topic.id : null);
+    }),
     "telegram_update",
-    "bot/chat/topic yangilandi"
+    `${bot.name} / ${chat.name}${topic ? " / " + topic.name : ""}`
+  );
+});
+
+router.post("/projects/:slug/sheets", verifyCsrf, (req, res) => {
+  const { slug } = req.params;
+  const project = projects.getBySlug(slug);
+  if (!project) return res.redirect(`/projects/${slug}?error=${encodeURIComponent("Loyiha topilmadi")}`);
+
+  const listIds = [].concat(req.body.listIds || []).map((v) => parseInt(v, 10)).filter(Boolean);
+  const links = listIds.map((listId) => {
+    const list = sheetsCatalog.getList(listId);
+    return { sheetId: list.sheet_id, listId: list.id };
+  });
+
+  redirectWithResult(
+    res,
+    slug,
+    Promise.resolve().then(() => variableLinks.setSheetLinks(project.id, links)),
+    "sheets_update",
+    `${links.length} ta list bog'landi`
   );
 });
 

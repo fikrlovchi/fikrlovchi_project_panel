@@ -55,19 +55,60 @@
       </div>
     <% } %>
 
-    <% if (telegramConfig) { %>
+    <% if (canLinkTelegram) { %>
       <div class="card">
         <strong>Telegram sozlamalari</strong>
-        <form method="post" action="/projects/<%= project.slug %>/telegram" class="controls">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <input type="text" name="botToken" placeholder="Bot token (<%= telegramConfig.botTokenMasked || 'sozlanmagan' %>)" />
-          <input type="text" name="chatId" placeholder="Chat ID" value="<%= telegramConfig.chatId %>" />
-          <input type="text" name="topicId" placeholder="Topic ID" value="<%= telegramConfig.topicId %>" />
-          <button type="submit">Saqlash</button>
-        </form>
-        <div style="font-size:12px;color:var(--muted);">Bo'sh qoldirilgan maydon o'zgartirilmaydi.</div>
+        <% if (telegramChats.length === 0) { %>
+          <div class="muted-inline">Hali bot/chat qo'shilmagan. <a href="/variables">O'zgaruvchilar</a> sahifasida qo'shing.</div>
+        <% } else { %>
+          <form method="post" action="/projects/<%= project.slug %>/telegram" class="controls" id="telegram-link-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <select name="chatId" id="telegram-chat-select" required>
+              <option value="">— Chat tanlang —</option>
+              <% var lastBotId = null; %>
+              <% telegramChats.forEach(function (chat) { %>
+                <% if (chat.bot_id !== lastBotId) { if (lastBotId !== null) { %></optgroup><% } %>
+                  <optgroup label="<%= chat.bot.name %>">
+                <% lastBotId = chat.bot_id; } %>
+                <option value="<%= chat.id %>" <%= currentTelegramLink && currentTelegramLink.chat_id === chat.id ? 'selected' : '' %>><%= chat.name %></option>
+              <% }); %>
+              <% if (lastBotId !== null) { %></optgroup><% } %>
+            </select>
+            <select name="topicId" id="telegram-topic-select">
+              <option value="">— Topic yo'q —</option>
+              <% telegramTopics.forEach(function (topic) { %>
+                <option value="<%= topic.id %>" data-chat-id="<%= topic.chat_id %>" <%= currentTelegramLink && currentTelegramLink.topic_id === topic.id ? 'selected' : '' %>><%= topic.chat.name %> / <%= topic.name %></option>
+              <% }); %>
+            </select>
+            <button type="submit">Saqlash</button>
+          </form>
+        <% } %>
       </div>
     <% } %>
+
+    <div class="card">
+      <strong>Google Sheets</strong>
+      <% if (sheetLists.length === 0) { %>
+        <div class="muted-inline">Hali sheet/list qo'shilmagan. <a href="/variables">O'zgaruvchilar</a> sahifasida qo'shing.</div>
+      <% } else { %>
+        <% var linkedListIds = currentSheetLinks.map(function (l) { return l.list_id; }); %>
+        <form method="post" action="/projects/<%= project.slug %>/sheets" class="controls">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <select name="listIds" multiple size="<%= Math.min(6, sheetLists.length) %>" style="min-width:220px;">
+            <% var lastSheetId = null; %>
+            <% sheetLists.forEach(function (list) { %>
+              <% if (list.sheet_id !== lastSheetId) { if (lastSheetId !== null) { %></optgroup><% } %>
+                <optgroup label="<%= list.sheet.name %>">
+              <% lastSheetId = list.sheet_id; } %>
+              <option value="<%= list.id %>" <%= linkedListIds.indexOf(list.id) !== -1 ? 'selected' : '' %>><%= list.name %> (<%= list.list_name %>)</option>
+            <% }); %>
+            <% if (lastSheetId !== null) { %></optgroup><% } %>
+          </select>
+          <button type="submit">Saqlash</button>
+        </form>
+        <div class="muted-inline">Faqat ko'rinish/hisobot uchun — .env fayliga yozilmaydi.</div>
+      <% } %>
+    </div>
 
     <div class="card">
       <strong>Ishga tushishlar tarixi</strong>
@@ -103,5 +144,6 @@
       </div>
     </div>
   </main>
+  <script src="/project-detail.js"></script>
 </body>
 </html>

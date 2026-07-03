@@ -4,7 +4,9 @@ const runs = require("../db/queries/runs");
 const logEvents = require("../db/queries/logEvents");
 const manageableUnits = require("../config/manageable-units");
 const systemdControl = require("../services/systemdControl");
-const envFileEditor = require("../services/envFileEditor");
+const telegramCatalog = require("../db/queries/telegramCatalog");
+const sheetsCatalog = require("../db/queries/sheetsCatalog");
+const variableLinks = require("../db/queries/variableLinks");
 const { ensureCsrfToken } = require("../middleware/csrf");
 const { formatTashkent } = require("../utils/formatDate");
 
@@ -44,15 +46,14 @@ router.get("/projects/:slug", async (req, res) => {
     }
   }
 
-  let telegramConfig = null;
-  if (unit && unit.envPath && unit.telegramEnvKeys) {
-    const raw = envFileEditor.readEnvValues(unit.envPath, Object.values(unit.telegramEnvKeys));
-    telegramConfig = {
-      botTokenMasked: envFileEditor.maskSecret(raw[unit.telegramEnvKeys.botToken]),
-      chatId: raw[unit.telegramEnvKeys.chatId] || "",
-      topicId: raw[unit.telegramEnvKeys.topicId] || "",
-    };
-  }
+  const canLinkTelegram = Boolean(unit && unit.envPath && unit.telegramEnvKeys);
+  const telegramChats = telegramCatalog.listFlatChatsWithBot();
+  const telegramTopics = telegramCatalog.listFlatTopicsWithChat();
+  const currentTelegramLink = variableLinks.getTelegramLinkForProject(project.id);
+
+  const sheets = sheetsCatalog.listSheets();
+  const sheetLists = sheetsCatalog.listFlatListsWithSheet();
+  const currentSheetLinks = variableLinks.listSheetLinksForProject(project.id);
 
   res.render("project-detail", {
     project,
@@ -64,7 +65,13 @@ router.get("/projects/:slug", async (req, res) => {
     isManaged,
     intervalInput,
     liveStatus,
-    telegramConfig,
+    canLinkTelegram,
+    telegramChats,
+    telegramTopics,
+    currentTelegramLink,
+    sheets,
+    sheetLists,
+    currentSheetLinks,
     csrfToken: ensureCsrfToken(req),
     actionMessage: req.query.ok,
     errorMessage: req.query.error,
