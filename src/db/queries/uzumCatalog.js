@@ -10,6 +10,10 @@ const stmts = {
   listAllShops: db.prepare("SELECT * FROM uzum_shops ORDER BY name"),
   getShop: db.prepare("SELECT * FROM uzum_shops WHERE id = ?"),
   createShop: db.prepare("INSERT INTO uzum_shops (cabinet_id, name, shop_id) VALUES (?, ?, ?)"),
+  upsertShop: db.prepare(`
+    INSERT INTO uzum_shops (cabinet_id, name, shop_id) VALUES (?, ?, ?)
+    ON CONFLICT(cabinet_id, shop_id) DO UPDATE SET name = excluded.name
+  `),
   deleteShop: db.prepare("DELETE FROM uzum_shops WHERE id = ?"),
 };
 
@@ -34,6 +38,11 @@ function getShop(id) {
 }
 function createShop(cabinetId, name, shopId) {
   return stmts.createShop.run(cabinetId, name, shopId).lastInsertRowid;
+}
+// Uzum API'dan avtomatik sinxronlashda ishlatiladi — bir xil do'kon qayta
+// qo'shilmaydi, faqat nomi yangilanadi.
+function upsertShop(cabinetId, name, shopId) {
+  stmts.upsertShop.run(cabinetId, name, shopId);
 }
 function deleteShop(id) {
   stmts.deleteShop.run(id);
@@ -64,6 +73,7 @@ module.exports = {
   listShopsByCabinet,
   getShop,
   createShop,
+  upsertShop,
   deleteShop,
   listCabinetsWithShops,
   listFlatShopsWithCabinet,

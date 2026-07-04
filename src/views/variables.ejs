@@ -195,10 +195,16 @@
               <button type="submit">+ Do'kon qo'shish</button>
             </form>
 
-            <form method="post" action="/variables/uzum/cabinets/<%= cabinet.id %>/delete">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <button type="submit" class="link-btn">Kabinetni o'chirish</button>
-            </form>
+            <div class="controls">
+              <form method="post" action="/variables/uzum/cabinets/<%= cabinet.id %>/sync-shops">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit">Do'konlarni Uzum'dan yangilash</button>
+              </form>
+              <form method="post" action="/variables/uzum/cabinets/<%= cabinet.id %>/delete">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="link-btn">Kabinetni o'chirish</button>
+              </form>
+            </div>
           </div>
         </details>
       <% }); %>

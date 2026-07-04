@@ -6,6 +6,7 @@ const uzumCatalog = require("../db/queries/uzumCatalog");
 const variableLinks = require("../db/queries/variableLinks");
 const envBindings = require("../db/queries/envBindings");
 const envFileEditor = require("../services/envFileEditor");
+const uzumApi = require("../services/uzumApi");
 const { recordAdminAction } = require("../services/auditLog");
 const { ensureCsrfToken, verifyCsrf } = require("../middleware/csrf");
 
@@ -156,19 +157,48 @@ router.post("/variables/tokens/:id/delete", verifyCsrf, (req, res) => {
   redirectBack(res, "Token o'chirildi");
 });
 
-router.post("/variables/uzum/cabinets", verifyCsrf, (req, res) => {
+async function syncShopsFromUzum(cabinetId, token) {
+  const shops = await uzumApi.fetchShops(token);
+  for (const shop of shops) {
+    uzumCatalog.upsertShop(cabinetId, shop.name, shop.shopId);
+  }
+  return shops.length;
+}
+
+router.post("/variables/uzum/cabinets", verifyCsrf, async (req, res) => {
   const name = (req.body.name || "").trim();
   const token = (req.body.token || "").trim();
   if (!name || !token) return redirectBack(res, null, "Nom va token to'ldirilishi shart");
-  uzumCatalog.createCabinet(name, token);
+
+  const cabinetId = uzumCatalog.createCabinet(name, token);
   recordAdminAction("variable_create", "uzum_cabinet", name);
-  redirectBack(res, "Kabinet qo'shildi");
+
+  try {
+    const count = await syncShopsFromUzum(cabinetId, token);
+    recordAdminAction("uzum_shops_sync", name, `${count} ta do'kon`);
+    redirectBack(res, `Kabinet qo'shildi, Uzum'dan ${count} ta do'kon olindi`);
+  } catch (e) {
+    redirectBack(res, null, `Kabinet qo'shildi, lekin do'konlarni olishda xato: ${e.message}`);
+  }
 });
 
 router.post("/variables/uzum/cabinets/:id/delete", verifyCsrf, (req, res) => {
   uzumCatalog.deleteCabinet(req.params.id);
   recordAdminAction("variable_delete", "uzum_cabinet", req.params.id);
   redirectBack(res, "Kabinet o'chirildi");
+});
+
+router.post("/variables/uzum/cabinets/:id/sync-shops", verifyCsrf, async (req, res) => {
+  const cabinet = uzumCatalog.getCabinet(req.params.id);
+  if (!cabinet) return redirectBack(res, null, "Kabinet topilmadi");
+
+  try {
+    const count = await syncShopsFromUzum(cabinet.id, cabinet.token);
+    recordAdminAction("uzum_shops_sync", cabinet.name, `${count} ta do'kon`);
+    redirectBack(res, `Uzum'dan ${count} ta do'kon yangilandi`);
+  } catch (e) {
+    redirectBack(res, null, `Do'konlarni olishda xato: ${e.message}`);
+  }
 });
 
 router.post("/variables/uzum/shops", verifyCsrf, (req, res) => {
