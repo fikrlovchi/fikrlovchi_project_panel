@@ -147,6 +147,63 @@
     </div>
 
     <div class="card">
+      <strong>Operatorlar</strong>
+      <div class="muted-inline">
+        Loyihaning o'z servisiga kiradigan hisoblar (panel'ga kirmaydi). Parol faqat hash
+        holida saqlanadi — unutilgan parol o'rniga yangisi o'rnatiladi.
+      </div>
+
+      <% if (operators.length > 0) { %>
+        <table>
+          <thead><tr><th>Login</th><th>To'liq ism</th><th>Holat</th><th>Qo'shilgan</th><th>Amallar</th></tr></thead>
+          <tbody>
+            <% operators.forEach(function (u) { %>
+              <tr>
+                <td><code><%= u.login %></code></td>
+                <td>
+                  <form method="post" action="/projects/<%= project.slug %>/users/<%= u.id %>/rename" style="display:inline-flex;gap:4px;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <input type="text" name="displayName" value="<%= u.display_name %>" required style="font-size:12px;" />
+                    <button type="submit" style="font-size:12px;">Saqlash</button>
+                  </form>
+                </td>
+                <td>
+                  <span class="badge <%= u.is_active ? 'ok' : 'error' %>"><%= u.is_active ? 'faol' : 'faolsiz' %></span>
+                </td>
+                <td><%= formatTashkent(u.created_at) %></td>
+                <td style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <form method="post" action="/projects/<%= project.slug %>/users/<%= u.id %>/password" style="display:inline-flex;gap:4px;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <input type="password" name="password" placeholder="yangi parol" required minlength="<%= minPasswordLength %>" style="font-size:12px;" />
+                    <button type="submit" style="font-size:12px;">Parolni tiklash</button>
+                  </form>
+                  <form method="post" action="/projects/<%= project.slug %>/users/<%= u.id %>/toggle">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button type="submit" class="link-btn"><%= u.is_active ? 'faolsizlantirish' : 'faollashtirish' %></button>
+                  </form>
+                  <form method="post" action="/projects/<%= project.slug %>/users/<%= u.id %>/delete" onsubmit="return confirm('<%= u.login %>' + ' o\'chirilsinmi?');">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button type="submit" class="link-btn">o'chirish</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <div class="muted-inline">Hali operator qo'shilmagan.</div>
+      <% } %>
+
+      <form method="post" action="/projects/<%= project.slug %>/users" class="controls">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="text" name="login" placeholder="login (operator1)" required />
+        <input type="text" name="displayName" placeholder="to'liq ism" required />
+        <input type="password" name="password" placeholder="parol" required minlength="<%= minPasswordLength %>" />
+        <button type="submit">Operator qo'shish</button>
+      </form>
+    </div>
+
+    <div class="card">
       <strong>Ishga tushishlar tarixi</strong>
       <table>
         <thead>

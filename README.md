@@ -11,6 +11,28 @@ uchun admin panel. `fikrlovchi.uz` domenida ishlaydi.
 - Loyiha sahifasi: ishga tushishlar tarixi, har bir run'ning log qatorlari.
 - Boshqaruv (faqat `src/config/manageable-units.js` da ro'yxatga olingan loyihalar uchun):
   intervalni o'zgartirish, to'xtatish/davom ettirish, hozir ishga tushirish.
+- **Operatorlar** — loyihaning o'z servisiga kiradigan hisoblar (pastga qarang).
+
+## Operatorlar (loyiha foydalanuvchilari)
+
+Loyiha sahifasidagi **"Operatorlar"** kartasi `project_users` jadvalini
+boshqaradi: qo'shish · to'liq ismni o'zgartirish · parolni tiklash ·
+faolsizlantirish · o'chirish. Bu hisoblar **panel'ga kirmaydi** — ular
+loyihaning o'z servisi uchun (masalan stocker'da ombor operatorlari).
+
+Servis ro'yxatni o'z API kaliti bilan tortadi:
+
+```
+GET /api/ingest/project-users
+Authorization: Bearer <PANEL_API_KEY>
+X-Project-Slug: <slug>
+→ {"users":[{"login","displayName","passwordHash","isActive"}]}
+```
+
+Parol **bcrypt hash** sifatida uzatiladi: servis login'ni mahalliy tekshiradi
+va panel o'chib qolganda ham ishlayveradi. Hisob faolsizlantirilsa yoki
+o'chirilsa, servis keyingi sinxronda uning tokenlarini bekor qiladi (stocker'da
+60 soniya).
 
 ## Mahalliy ishga tushirish
 

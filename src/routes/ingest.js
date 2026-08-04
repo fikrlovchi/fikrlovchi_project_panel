@@ -3,6 +3,7 @@ const express = require("express");
 const projects = require("../db/queries/projects");
 const runs = require("../db/queries/runs");
 const logEvents = require("../db/queries/logEvents");
+const projectUsers = require("../db/queries/projectUsers");
 
 const router = express.Router();
 
@@ -90,6 +91,22 @@ router.post("/runs", authenticateProject, (req, res) => {
 
 router.get("/ping", authenticateProject, (req, res) => {
   res.json({ ok: true });
+});
+
+// Loyihaning operatorlari — servis o'zida keshlab, login'ni mahalliy tekshiradi.
+// Hash uzatiladi (ochiq parol emas): panel o'chib qolsa ham operatorlar
+// ishlayveradi, lekin panel'dan tashqarida parol tiklash imkoni yo'q.
+// Faolsizlantirilganlar ham ro'yxatda qoladi — servis ularning tokenini
+// bekor qilishi uchun `isActive: false` ni bilishi kerak.
+router.get("/project-users", authenticateProject, (req, res) => {
+  res.json({
+    users: projectUsers.listForApi(req.project.id).map((u) => ({
+      login: u.login,
+      displayName: u.display_name,
+      passwordHash: u.password_hash,
+      isActive: u.is_active,
+    })),
+  });
 });
 
 module.exports = router;

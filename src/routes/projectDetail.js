@@ -7,6 +7,7 @@ const systemdControl = require("../services/systemdControl");
 const telegramCatalog = require("../db/queries/telegramCatalog");
 const sheetsCatalog = require("../db/queries/sheetsCatalog");
 const apiTokens = require("../db/queries/apiTokens");
+const projectUsers = require("../db/queries/projectUsers");
 const uzumCatalog = require("../db/queries/uzumCatalog");
 const variableLinks = require("../db/queries/variableLinks");
 const envBindingsQuery = require("../db/queries/envBindings");
@@ -106,6 +107,8 @@ router.get("/projects/:slug", async (req, res) => {
   const sheetLists = sheetsCatalog.listFlatListsWithSheet();
   const currentSheetLinks = variableLinks.listSheetLinksForProject(project.id);
 
+  const operators = projectUsers.listForProject(project.id);
+
   res.render("project-detail", {
     project,
     runs: runList,
@@ -122,6 +125,8 @@ router.get("/projects/:slug", async (req, res) => {
     sheets,
     sheetLists,
     currentSheetLinks,
+    operators,
+    minPasswordLength: projectUsers.MIN_PASSWORD_LENGTH,
     csrfToken: ensureCsrfToken(req),
     actionMessage: req.query.ok,
     errorMessage: req.query.error,
