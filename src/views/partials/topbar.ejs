@@ -1,8 +1,14 @@
 <header class="topbar">
-  <h1><a href="/" style="color:inherit;text-decoration:none;"><img src="/logo.svg" class="logo" alt="" />Fikrlovchi Panel</a></h1>
-  <div style="display:flex;gap:16px;align-items:center;">
+  <!-- Brend: ikonka + yozuvli logotip (brand/logo-text.png dan yasalgan,
+       foni shaffof). Matnli "Fikrlovchi Panel" o'rnini bosdi. -->
+  <a class="brand" href="/" title="Stocker">
+    <img src="/logo-icon.png" class="brand-icon" alt="" />
+    <img src="/logo-wordmark.png" class="brand-wordmark" alt="Stocker" />
+  </a>
+  <nav class="topnav">
+    <a href="/">Loyihalar</a>
     <a href="/variables">O'zgaruvchilar</a>
     <a href="/account">Sozlamalar</a>
     <form method="post" action="/logout"><button class="logout-btn" type="submit">Chiqish</button></form>
-  </div>
+  </nav>
 </header>
