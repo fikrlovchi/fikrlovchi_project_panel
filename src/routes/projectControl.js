@@ -131,31 +131,34 @@ router.post("/projects/:slug/rename", verifyCsrf, (req, res) => {
   );
 });
 
+// To'xtatish/davom ettirish: timer bilan ishlaydigan loyihada timer, doimiy
+// daemon'da (stocker) esa servisning o'zi to'xtatiladi — aks holda "to'xtatish"
+// tugmasi hech nima qilmagan bo'lardi.
 router.post("/projects/:slug/pause", verifyCsrf, (req, res) => {
   const { slug } = req.params;
-  redirectWithResult(
-    res,
-    slug,
-    systemdControl.pauseTimer(slug).then(() => projects.setPaused(slug, true)),
-    "pause",
-    null
-  );
+  const stop = systemdControl.hasTimer(slug)
+    ? systemdControl.pauseTimer(slug)
+    : systemdControl.stopService(slug);
+  redirectWithResult(res, slug, stop.then(() => projects.setPaused(slug, true)), "pause", null);
 });
 
 router.post("/projects/:slug/resume", verifyCsrf, (req, res) => {
   const { slug } = req.params;
-  redirectWithResult(
-    res,
-    slug,
-    systemdControl.resumeTimer(slug).then(() => projects.setPaused(slug, false)),
-    "resume",
-    null
-  );
+  const start = systemdControl.hasTimer(slug)
+    ? systemdControl.resumeTimer(slug)
+    : systemdControl.startService(slug);
+  redirectWithResult(res, slug, start.then(() => projects.setPaused(slug, false)), "resume", null);
 });
 
 router.post("/projects/:slug/run-now", verifyCsrf, (req, res) => {
   const { slug } = req.params;
   redirectWithResult(res, slug, systemdControl.runNow(slug), "run_now", null);
+});
+
+// Doimiy daemon uchun: kod yangilangandan keyin qayta ishga tushirish.
+router.post("/projects/:slug/restart", verifyCsrf, (req, res) => {
+  const { slug } = req.params;
+  redirectWithResult(res, slug, systemdControl.restartService(slug), "restart", null);
 });
 
 router.get("/projects/:slug/status.json", async (req, res) => {

@@ -58,6 +58,31 @@ async function runNow(slug) {
   await runSystemctl(["start", serviceUnit]);
 }
 
+// Doimiy daemon (masalan stocker-server) uchun: timer bo'lmaganda "hozir
+// ishga tushirish" ma'nosiz — servis allaqachon ishlab turadi.
+async function restartService(slug) {
+  const { serviceUnit } = getUnitsOrThrow(slug);
+  if (!serviceUnit) throw new Error(`"${slug}" uchun service sozlanmagan`);
+  await runSystemctl(["restart", serviceUnit]);
+}
+
+async function stopService(slug) {
+  const { serviceUnit } = getUnitsOrThrow(slug);
+  if (!serviceUnit) throw new Error(`"${slug}" uchun service sozlanmagan`);
+  await runSystemctl(["stop", serviceUnit]);
+}
+
+async function startService(slug) {
+  const { serviceUnit } = getUnitsOrThrow(slug);
+  if (!serviceUnit) throw new Error(`"${slug}" uchun service sozlanmagan`);
+  await runSystemctl(["start", serviceUnit]);
+}
+
+// Loyiha timer bilan (davriy) yoki doimiy daemon sifatida ishlaydimi.
+function hasTimer(slug) {
+  return Boolean(manageableUnits[slug]?.timerUnit);
+}
+
 function parseProps(stdout) {
   const result = {};
   for (const line of stdout.split("\n")) {
@@ -94,6 +119,10 @@ module.exports = {
   pauseTimer,
   resumeTimer,
   runNow,
+  restartService,
+  stopService,
+  startService,
+  hasTimer,
   getStatus,
   getConfiguredIntervalSeconds,
   UnmanagedProjectError,

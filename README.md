@@ -84,6 +84,25 @@ root huquqi bilan systemd buyruqlarini bajaradi va ixtiyoriy fayllarni yozadi,
 shuning uchun qaysi unit/fayllarga tegishi mumkinligi faqat deploy qilingan
 kodda aniqlanadi.
 
+### Doimiy daemon (timer'siz loyiha)
+
+Ba'zi loyihalar davriy emas, **uzluksiz** ishlaydi (masalan `stocker` — yig'ish
+serveri WebSocket bilan telefon va printer clientlarini kutib turadi). Bunda
+`timerUnit` va `timerUnitPath` ni `null` qoldiring:
+
+```js
+stocker: {
+  serviceUnit: 'stocker-server.service',
+  timerUnit: null,
+  timerUnitPath: null,
+  envPath: '/root/stocker/server/.env',
+},
+```
+
+"Boshqaruv" kartasi o'zini shunga moslaydi: interval va "hozir ishga tushirish"
+o'rniga **"Qayta ishga tushirish"** ko'rsatiladi, "To'xtatish/Davom ettirish"
+esa timer emas, servisning o'zini to'xtatadi.
+
 ---
 
 ## Serverga yuklash (Ubuntu/Debian, uzumOrderToMC bilan bir xil droplet)

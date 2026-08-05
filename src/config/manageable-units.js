@@ -16,4 +16,20 @@ module.exports = {
     timerUnitPath: '/etc/systemd/system/cancel-uzum-order.timer',
     envPath: '/root/cancelUzumOrder/.env',
   },
+  'mc-stock-to-uzum': {
+    serviceUnit: 'mc-stock.service',
+    timerUnit: 'mc-stock.timer',
+    timerUnitPath: '/etc/systemd/system/mc-stock.timer',
+    envPath: '/root/stockerMC_Stock/.env',
+  },
+  // Stocker — timer bilan emas, DOIMIY daemon sifatida ishlaydi (yig'ish
+  // serveri, WebSocket bilan telefon/printer clientlarini kutib turadi).
+  // timerUnit yo'q: panel bunda interval/to'xtatish/hozir ishga tushirish
+  // o'rniga faqat "qayta ishga tushirish"ni ko'rsatadi.
+  stocker: {
+    serviceUnit: 'stocker-server.service',
+    timerUnit: null,
+    timerUnitPath: null,
+    envPath: '/root/stocker/server/.env',
+  },
 };

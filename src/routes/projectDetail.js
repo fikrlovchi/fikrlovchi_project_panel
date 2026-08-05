@@ -85,6 +85,9 @@ router.get("/projects/:slug", async (req, res) => {
 
   const unit = manageableUnits[project.slug];
   const isManaged = Boolean(unit);
+  // Timer bilan ishlaydigan loyiha (davriy) yoki doimiy daemon (stocker) —
+  // "Boshqaruv" kartasi shu bo'yicha boshqa tugmalar ko'rsatadi.
+  const hasTimer = Boolean(unit?.timerUnit);
   const intervalSeconds = systemdControl.getConfiguredIntervalSeconds(project.slug);
   const intervalInput = secondsToAmountUnit(intervalSeconds);
 
@@ -117,6 +120,7 @@ router.get("/projects/:slug", async (req, res) => {
     page,
     pageSize: PAGE_SIZE,
     isManaged,
+    hasTimer,
     intervalInput,
     liveStatus,
     canManageEnv,
