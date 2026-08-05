@@ -47,6 +47,15 @@ app.use(
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
+// nginx `auth_request` uchun: stocker.uz/pdf/ (uzumPDFs) shu yerdan
+// panel sessiyasini so'raydi, shunda ikkinchi parol kerak bo'lmaydi —
+// bitta dastur, bitta kirish. Faqat 200/401 qaytaradi, tana yo'q.
+// Redirect QILMAYDI: auth_request faqat status kodga qaraydi.
+app.get("/internal/session-check", (req, res) => {
+  if (req.session && req.session.isAdmin) return res.sendStatus(200);
+  return res.sendStatus(401);
+});
+
 // Ingest API authenticates projects via their own API key, not the admin session.
 app.use("/api/ingest", ingestRoutes);
 
